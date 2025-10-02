@@ -1,44 +1,54 @@
+// server.js
 import express from "express";
-import fetch from "node-fetch"; // إذا Node < 18 استخدم node-fetch
 import cors from "cors";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// السماح بالطلبات من أي دومين (يمكن تضييقها لاحقاً)
-app.use(cors());
+app.use(cors()); // ضيق الوصول لاحقاً لو حبيت
 app.use(express.json());
 
-const OPENROUTER_API_KEY = "sk-or-XXXXXXX"; // ضع مفتاحك هنا
-const OPENROUTER_MODEL = "google/gemini-2.5-flash";
+const API_KEY = process.env.GOOGLE_API_KEY;
+const ENDPOINT = process.env.GEMINI_ENDPOINT;
 
-app.post("/api/openrouter", async (req, res) => {
-  const { prompt } = req.body;
-  if (!prompt) return res.status(400).json({ error: "Prompt is required" });
+app.post("/api/gemini", async (req, res) => {
+  const prompt = req.body?.prompt;
+  if (!prompt) return res.status(400).json({ error: "prompt required" });
+  if (!API_KEY || !ENDPOINT) return res.status(500).json({ error: "server not configured" });
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const body = {
+      prompt: { text: prompt },
+      temperature: 0.7,
+      maxOutputTokens: 800
+    };
+
+    const r = await fetch(ENDPOINT, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
       },
-      body: JSON.stringify({
-        model: OPENROUTER_MODEL,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(body)
     });
 
-    const data = await response.json();
-    res.json(data);
+    const text = await r.text();
+    let json;
+    try { json = JSON.parse(text); } catch { json = { raw: text }; }
 
+    if (!r.ok) return res.status(r.status).json({ error: "remote error", details: json });
+
+    // استخرج النص كما في المثال أعلاه
+    let result = "";
+    if (json?.candidates) result = (json.candidates.map(c => c.output || c.content?.[0]?.text || JSON.stringify(c))).join("\n");
+    else if (json?.outputs) result = json.outputs.map(o => o.text || JSON.stringify(o)).join("\n");
+    else if (json?.text) result = json.text;
+    else result = JSON.stringify(json);
+
+    res.json({ ok: true, result, raw: json });
   } catch (err) {
-    console.error("OpenRouter Proxy Error:", err);
-    res.status(500).json({ error: "Server Error" });
+    console.error(err);
+    res.status(500).json({ error: "server error", details: String(err) });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

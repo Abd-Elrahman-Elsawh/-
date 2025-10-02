@@ -502,11 +502,9 @@ margin-bottom: 10px;
   // ***************************************************************
   // 🔴 تنبيه هام: يجب وضع مفتاح OpenRouter API الخاص بك هنا 
   // المفتاح يبدأ عادة بـ "sk-"
-  const OPENROUTER_API_KEY = "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"; 
   // ***************************************************************
   
   // الموديل الصحيح لـ Gemini 2.5 Flash عبر OpenRouter
-  const OPENROUTER_MODEL = "google/gemini-2.5-flash"; 
   
   let carsDatabase = []; // تخزين قاعدة البيانات في الذاكرة
 
@@ -536,22 +534,15 @@ margin-bottom: 10px;
    * @returns {Promise<string>} - الرد المتوقع من نموذج اللغة.
    */
  async function askOpenRouter(prompt) {
-  try {
-    const resp = await fetch("http://localhost:3000/api/openrouter", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt })
-    });
-    const data = await resp.json();
-    if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
-    } else {
-      return "عذراً، لم يتمكن السيرفر من الحصول على الرد.";
-    }
-  } catch (err) {
-    console.error("Proxy Error:", err);
-    return "حدث خطأ في الاتصال بالسيرفر.";
-  }
+  const resp = await fetch("https://your-host.com/api/gemini", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+  const j = await resp.json();
+  return j.result || j.raw || "لم يتم الحصول على رد";
+
+
 }
 
 
