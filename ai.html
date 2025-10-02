@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مساعد معرض السيارات</title>
+  <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+
+     * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: #020c1f;
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+          body::-webkit-scrollbar {
+            width: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg,#63eaf1,#1d53f5);
+            border-radius: 20px;
+        }
+      .header {
+            background: linear-gradient(150deg, rgba(3,20,22,0.98) 0%, rgba(19,25,34,0.98) 100%);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            height: 90px;
+            position: sticky;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            border-bottom: 2px solid rgba(99,234,241,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .logo {
+            font-size: 36px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #63eaf1, #1d53f5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 40px rgba(99,234,241,0.4);
+            letter-spacing: 1px;
+            transition: transform 0.3s;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .nav {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .nav li, .nav a li {
+            list-style: none;
+            color: rgba(255,255,255,0.85);
+            padding: 14px 28px;
+            border-radius: 15px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 600;
+            font-size: 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav li:hover, .nav a li:hover {
+            background: linear-gradient(135deg, rgba(99,234,241,0.25), rgba(29,83,245,0.25));
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(99,234,241,0.3);
+            border-color: rgba(99,234,241,0.4);
+        }
+
+        a {
+            text-decoration: none;
+        }
+    .chat-box {
+      width: 80%;
+      margin-right: 10%;
+            margin-left: 10%;
+margin-top: 20px;
+margin-bottom: 10px;
+      max-width: 100%;
+      background: rgba(7, 18, 39, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(99, 234, 241, 0.2);
+    }
+    .chat-header {
+      padding: 20px;
+      background: linear-gradient(135deg, #1a2537 0%, #0d1623 100%);
+      border-bottom: 2px solid rgba(99, 234, 241, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: #4ade80;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .chat-messages {
+      height: 450px;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(2, 12, 31, 0.5);
+    }
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+    .chat-messages::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+    }
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: rgba(99, 234, 241, 0.3);
+      border-radius: 3px;
+    }
+    .msg {
+      padding: 14px 16px;
+      border-radius: 12px;
+      max-width: 85%;
+      white-space: pre-line;
+      animation: slideIn 0.3s ease;
+      line-height: 1.6;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(99,234,241,0.2) 0%, rgba(99,234,241,0.1) 100%);
+      border: 1px solid rgba(99,234,241,0.3);
+    }
+    .bot {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .typing {
+      display: flex;
+      gap: 4px;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 12px;
+      max-width: 80px;
+      align-self: flex-start;
+    }
+    .typing span {
+      width: 8px;
+      height: 8px;
+      background: #63eaf1;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    .typing span:nth-child(1) { animation-delay: -0.32s; }
+    .typing span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    .chat-input {
+      display: flex;
+      gap: 10px;
+      padding: 20px;
+      border-top: 2px solid rgba(99, 234, 241, 0.3);
+      background: rgba(7, 18, 39, 0.8);
+    }
+    input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 12px 16px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #63eaf1;
+      background: rgba(255,255,255,0.08);
+    }
+    input::placeholder {
+      color: rgba(255,255,255,0.4);
+    }
+    button {
+      background: linear-gradient(135deg, #63eaf1 0%, #4dd4e0 100%);
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #020c1f;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(99, 234, 241, 0.4);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .clear-btn {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+    .clear-btn:hover {
+      background: rgba(239, 68, 68, 0.3);
+      box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+    }
+    .car-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(99, 234, 241, 0.2);
+      border-radius: 10px;
+      padding: 12px;
+      margin: 8px 0;
+    }
+    .car-name {
+      font-weight: 600;
+      color: #63eaf1;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .car-details {
+      font-size: 13px;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.8);
+    }
+    .car-card img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    .highlight {
+      color: #4ade80;
+      font-weight: 600;
+    }
+    .menu {
+            width: 380px;
+            height: calc(100vh - 90px);
+            overflow-y: auto;
+            position: fixed;
+            background: linear-gradient(150deg, rgba(3,20,22,0.98) 0%, rgba(19,25,34,0.98) 100%);
+            backdrop-filter: blur(20px);
+            z-index: 999;
+            top: 90px;
+            right: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-right: 2px solid rgba(99,234,241,0.2);
+            box-shadow: -10px 0 40px rgba(0,0,0,0.5);
+        }
+
+        .menu.active {
+            transform: translateX(0);
+        }
+
+        .menu ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .menu ul li {
+            color: white;
+            padding: 18px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 10px;
+        }
+  .toggle {
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            transition: all 0.4s;
+            filter: drop-shadow(0 0 8px rgba(99,234,241,0.5));
+        }
+        .menu ul li:hover {
+            background: linear-gradient(135deg, rgba(99,234,241,0.2), rgba(29,83,245,0.15));
+            transform: translateX(-5px);
+            box-shadow: 0 4px 15px rgba(99,234,241,0.2);
+        }
+
+        .menu-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: #63eaf1;
+            text-shadow: 0 0 20px rgba(99,234,241,0.3);
+        }
+@media(max-width: 768px) {
+            .header {
+                padding: 0 20px;
+                height: 70px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            .nav {
+                gap: 8px;
+            }
+
+            .nav li, .nav a li {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+
+            .toggle {
+                width: 30px;
+                height: 30px;
+            }
+
+            .menu {
+                width: 320px;
+                top: 70px;
+                height: calc(100vh - 70px);
+                padding: 20px;
+            }
+
+            .cars_shop {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                padding: 30px 15px;
+                gap: 20px;
+            }
+
+            .cars_shop.menu-collapsed {
+                padding-right: 15px;
+            }
+
+            .cars img {
+                height: 140px;
+            }
+
+            .car-details-summary {
+                padding: 12px;
+            }
+
+            .car-details-summary h4 {
+                font-size: 1rem;
+            }
+
+            .car-details-summary p {
+                font-size: 0.8rem;
+            }
+
+            .car-price {
+                font-size: 1.2rem;
+            }
+
+            .modal-content {
+                padding: 20px;
+                border-radius: 15px;
+            }
+
+            .car-info-section img {
+                height: 250px;
+            }
+        }
+
+        @media(max-width: 480px) {
+            .cars_shop {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 15px;
+                padding: 20px 10px;
+            }
+
+            .cars img {
+                height: 120px;
+            }
+
+            .car-details-summary {
+                padding: 10px;
+            }
+
+            .car-details-summary h4 {
+                font-size: 0.9rem;
+            }
+
+            .car-price {
+                font-size: 1.1rem;
+            }
+        }
+  </style>
+</head>
+<body>
+     <div class="header">
+        <div class="logo">عبد الرحمن السواح</div>
+        <nav class="nav">
+           
+            <img src="Frame 19.png" alt="القائمة" class="toggle" id="menu-toggle">
+        </nav>
+    </div>
+     <div class="menu" id="side-menu">
+        <div class="category-section" id="category-section">
+            <h3 class="menu-title">القائمة</h3>
+            <ul id="category-list">
+               <a href="index.html"><li>الرئيسية</li></a>
+            <a href="cars.html"><li>السيارات</li></a>
+                <a href="#"><li>الاستفسار عن اي شئ (AI)</li></a>
+            </ul>
+        </div>
+     </div>
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="header-title">
+        <span class="status-dot"></span>
+        <div>مساعد Elsawah AI (Gemini 2.5 Flash عبر OpenRouter)</div>
+      </div>
+      <button class="clear-btn" id="clear">مسح المحادثة</button>
+    </div>
+    <div id="messages" class="chat-messages">
+      <div class="msg bot">مساعد Elsawah AI
+
+أنا مساعدك الذكي، يمكنني مساعدتك في:
+• البحث عن السيارات المتوفرة
+• معرفة الأسعار والمواصفات
+• الاستفسار عن عنوان المعرض ومواعيد العمل
+• مقارنة السيارات المختلفة
+
+كيف يمكنني مساعدتك اليوم؟</div>
+    </div>
+    <div class="chat-input">
+      <input id="input" placeholder="اكتب سؤالك هنا... مثل: أريد سيارة BMW">
+      <button id="send">إرسال</button>
+    </div>
+  </div>
+
+<script>
+  // ====== Supabase إعداد ======
+  const supabaseUrl = "https://mgcbhtnhxyaybpmqmgny.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nY2JodG5oeHlheWJwbXFtZ255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODQ0NTgsImV4cCI6MjA3NDQ2MDQ1OH0.45IGnbt4zjlJCHVFApNaJ_13E4Iz0eea-XBrLR0-umg";
+  const db = supabase.createClient(supabaseUrl, supabaseKey);
+  const CAR_TABLE = 'cars';
+     const menuToggle = document.getElementById('menu-toggle');
+        const sideMenu = document.getElementById('side-menu');
+  // معلومات المعرض
+  const SHOWROOM_INFO = {
+    name: "معرض عبد الرحمن السواح ",
+    address: "مصر-قسم اول الفيوم شارع الورشة امام المدرية المالية خلف مسجد ناصر",
+  };
+
+  // ====== OpenRouter API إعداد ======
+  // ***************************************************************
+  // 🔴 تنبيه هام: يجب وضع مفتاح OpenRouter API الخاص بك هنا 
+  // المفتاح يبدأ عادة بـ "sk-"
+  const OPENROUTER_API_KEY = "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"; 
+  // ***************************************************************
+  
+  // الموديل الصحيح لـ Gemini 2.5 Flash عبر OpenRouter
+  const OPENROUTER_MODEL = "google/gemini-2.5-flash"; 
+  
+  let carsDatabase = []; // تخزين قاعدة البيانات في الذاكرة
+
+  async function loadCarsData() {
+    try {
+      const { data, error } = await db.from(CAR_TABLE)
+        .select('*');
+      
+      if (!error && data) {
+        carsDatabase = data;
+        console.log(`تم تحميل ${carsDatabase.length} سيارة من قاعدة البيانات`);
+      }
+    } catch (e) {
+      console.error('خطأ في تحميل البيانات:', e);
+    }
+  }
+
+ menuToggle.addEventListener('click', () => {
+            sideMenu.classList.toggle('active');
+            // لاحظ: تمت إزالة carsGrid من الكود الأصلي، لذا تم التعليق على السطر التالي
+            // carsGrid.classList.toggle('menu-collapsed', !sideMenu.classList.contains('active'));
+        });
+        
+  /**
+   * دالة لإرسال الطلبات إلى OpenRouter API
+   * @param {string} prompt - السياق الكامل الذي سيتم إرساله للنموذج.
+   * @returns {Promise<string>} - الرد المتوقع من نموذج اللغة.
+   */
+  async function askOpenRouter(prompt) {
+    if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY.length < 10) {
+        // رسالة خطأ أكثر وضوحاً في حال عدم إدخال المفتاح
+        return "⚠️ خطأ حرج: لم يتم تعيين مفتاح OpenRouter API. الرجاء وضع مفتاحك الخاص (الذي يبدأ بـ 'sk-') في المتغير 'OPENROUTER_API_KEY' داخل الكود، ثم أعد المحاولة.";
+    }
+
+    // يتم تمرير الـ prompt في هيكل رسائل OpenRouter/OpenAI API
+    const messages = [
+        { role: "user", content: prompt }
+    ];
+
+    try {
+      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.href, // مرجع ضروري لـ OpenRouter
+        },
+        body: JSON.stringify({
+          model: OPENROUTER_MODEL,
+          messages: messages,
+          temperature: 0.7,
+        })
+      });
+      
+      if (!resp.ok) {
+        console.error('OpenRouter API Error:', resp.status, resp.statusText);
+        const errorData = await resp.text();
+        console.error('Error details:', errorData);
+        
+        // محاولة استخراج رسالة الخطأ من OpenRouter لتكون أكثر تحديداً
+        let errorMessage = `عذراً، حدث خطأ في OpenRouter API: ${resp.statusText}.`;
+        try {
+            const errorJson = JSON.parse(errorData);
+            if (errorJson.error && errorJson.error.message) {
+                 errorMessage += ` رسالة الخادم: ${errorJson.error.message}`;
+            } else if (errorJson.message) {
+                errorMessage += ` رسالة الخادم: ${errorJson.message}`;
+            }
+        } catch {
+            // لا يمكن تحليل JSON، نستخدم رسالة الخطأ الأساسية
+        }
+        
+        // إذا كان الخطأ 401، نذّكر المستخدم بالمفتاح
+        if (resp.status === 401) {
+             errorMessage += ` تأكد من أن مفتاح OpenRouter API صحيح وصالح ولديه رصيد كافٍ.`;
+        }
+
+        return errorMessage;
+      }
+      
+      const data = await resp.json();
+      console.log('OpenRouter Response:', data);
+      
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        return data.choices[0].message.content;
+      } else {
+        console.error('Unexpected response structure:', data);
+        throw new Error('Invalid response structure from OpenRouter');
+      }
+    } catch (error) {
+      console.error('OpenRouter Error:', error);
+      return "عذراً، حدث خطأ في معالجة طلبك (ربما مشكلة في الشبكة). يرجى المحاولة مرة أخرى.";
+    }
+  }
+
+  const input = document.getElementById('input');
+  const send = document.getElementById('send');
+  const msgs = document.getElementById('messages');
+  const clear = document.getElementById('clear');
+
+  function addMsg(text, cls) {
+    const d = document.createElement('div');
+    d.className = `msg ${cls}`;
+    d.innerHTML = text;
+    msgs.appendChild(d);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.id = 'typing-indicator';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    msgs.appendChild(typing);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function hideTyping() {
+    const typing = document.getElementById('typing-indicator');
+    if (typing) typing.remove();
+  }
+
+  function buildCarsList(cars) {
+    if (!cars || cars.length === 0) return '';
+    
+    // بناء قائمة بسيطة للسيارات للذكاء الاصطناعي
+    return cars.map(c => `
+السيارة: ${c.name || 'غير محدد'} ${c.model || ''}
+السعر: ${c.price || 'غير محدد'} ${c.currency || 'جنيه'}
+الحالة: ${c.condition || 'غير محدد'}
+نوع المحرك: ${c.engine_type || 'غير محدد'}
+اللون الخارجي: ${c.exterior_color || 'غير محدد'}
+عداد الكيلومترات: ${c.mileage_km || 'غير محدد'} كم
+الوصف: ${c.description || 'لا يوجد وصف'}
+---`).join('\n');
+  }
+
+  function formatCarResponse(cars) {
+    if (!cars || cars.length === 0) return '';
+    
+    // تنسيق HTML لعرض بطاقات السيارات
+    let html = '<div style="margin-top: 10px;">';
+    cars.forEach(c => {
+      const imageUrl = c.image_url || 'https://placehold.co/600x400/0a1428/ffffff?text=No+Image';
+      html += `
+        <div class="car-card">
+          <img src="${imageUrl}" alt="${c.name || 'صورة سيارة'}">
+          <div class="car-name">${c.name || 'سيارة'} ${c.model || ''}</div>
+          <div class="car-details">
+            <div><span class="highlight">السعر:</span> ${c.price || 'غير محدد'} ${c.currency || 'جنيه'}</div>
+            <div><span class="highlight">الحالة:</span> ${c.condition || 'غير محدد'}</div>
+            <div><span class="highlight">المحرك:</span> ${c.engine_type || 'غير محدد'}</div>
+            <div><span class="highlight">اللون:</span> ${c.exterior_color || 'غير محدد'}</div>
+            <div><span class="highlight">الكيلومترات:</span> ${c.mileage_km || 'غير محدد'} كم</div>
+            ${c.description ? `<div style="margin-top: 8px; color: rgba(255,255,255,0.7);">${c.description}</div>` : ''}
+          </div>
+        </div>`;
+    });
+    html += '</div>';
+    return html;
+  }
+
+  async function handleSend() {
+    const text = input.value.trim();
+    if (!text) return;
+    
+    addMsg(text, 'user');
+    input.value = '';
+    showTyping();
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+  
+    // البحث في قاعدة البيانات
+    if (carsDatabase.length === 0) {
+      await loadCarsData();
+    }
+
+    // إنشاء سياق كامل للذكاء الاصطناعي
+    const allCarsText = buildCarsList(carsDatabase);
+    
+    // سياق النظام للمساعد الذكي
+    const systemPrompt = `أنت مساعد ذكي لمعرض سيارات. لديك المعلومات التالية:
+اسمك: مساعد Elsawah AI
+معلومات المعرض:
+- الاسم: ${SHOWROOM_INFO.name}
+- العنوان: ${SHOWROOM_INFO.address}
+
+
+السيارات المتوفرة حالياً (${carsDatabase.length} سيارة):
+${allCarsText}
+
+
+تعليمات مهمة:
+1. إذا سأل العميل عن سيارة موجودة في القائمة، أعطه تفاصيلها كاملة
+2. إذا سأل عن سيارة غير موجودة، قل له بأدب: "للأسف، هذه السيارة غير متوفرة لدينا حالياً، لكن يمكنني مساعدتك في إيجاد بديل مناسب من السيارات المتوفرة تناسب ما طلبه في السعر او المواصفات
+3. اذا طلب منك ان تقارن بين سيارتان في المواصفات حتي لو مش في الموقع قارن بينها وتحاول اقناعه بالسيارات التي عندنا
+4. كن مهذباً ومحترفاً ومساعداً
+5. اقترح بدائل مناسبة عند الطلب ولا تزيد عن اقتراح
+6. اذكر الأسعار بوضوح عند السؤال عنها
+7. اذا سال عن سيارة وقال انه رأها علي صفحة الفيس بوك وهي غير متوفرة في الموقع قل له بادب ان السيارة من الممكن ان تكون قد بيعت واذا لم يقل انها غلي الصفحة فاعتبر ان هذا السطر غير موجود
+8. اذا سأل عن طرق التقسيط .طرق التقسيط 1يوجد تقسيط مباشر 2يوجود تقسيط عن طريق مايلو
+9. لا تقل ابدا انك سوف تبحث في المعارض الاخري 
+10.حاول تتكلن مصري دايما بس متتكلمش شعبي
+11.طرق التقسيط 1نظام البنوك مع كافة بنوك مصر 2شركات التقسيط اكبر شركات التقسيط في مصر 3تقسيط مباشر من خلال المعرض
+
+السؤال: ${text}
+
+أجب بشكل واضح ومفيد:`;
+
+    try {
+      // استخدام الدالة الجديدة لـ OpenRouter
+      const answer = await askOpenRouter(systemPrompt);
+      hideTyping();
+      
+      // إضافة بطاقات السيارات إذا كان الرد يحتوي على تفاصيل سيارات محددة
+      const mentionedCars = carsDatabase.filter(car => 
+        answer.includes(car.name) || answer.includes(car.model)
+      );
+      
+      let finalResponse = answer;
+      if (mentionedCars.length > 0 && mentionedCars.length <= 3) {
+        finalResponse += formatCarResponse(mentionedCars);
+      }
+      
+      addMsg(finalResponse, 'bot');
+    } catch (error) {
+      hideTyping();
+      addMsg('عذراً، حدث خطأ في معالجة طلبك. يرجى المحاولة مرة أخرى.', 'bot');
+    }
+  }
+
+  send.onclick = handleSend;
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleSend();
+  });
+  
+  clear.onclick = () => {
+    msgs.innerHTML = '';
+    addMsg('مرحباً بك في معرض السيارات! 🚗\n\nأنا مساعدك الذكي، يمكنني مساعدتك في:\n• البحث عن السيارات المتوفرة\n• معرفة الأسعار والمواصفات\n• الاستفسار عن عنوان المعرض ومواعيد العمل\n• مقارنة السيارات المختلفة\n\nكيف يمكنني مساعدتك اليوم؟', 'bot');
+  };
+
+  // تحميل البيانات عند بدء التطبيق
+  loadCarsData();
+</script>
+</body>
+</html>
